@@ -51,7 +51,7 @@ def setup_logging():
         try:
             config = yaml.safe_load(fread(logging_config))
         except yaml.YAMLError as _e:
-            print("ERROR: logging configuration error: {}".format(_e))
+            print(f"ERROR: logging configuration error: {_e}")
             sys.exit(12)
 
         fname = config.get('handlers').get('file_handler')['filename']
@@ -61,22 +61,19 @@ def setup_logging():
         config.get('handlers').get('file_handler')['filename'] = full_path
 
         logging.config.dictConfig(config)
-        logging.info("Loaded logging configuration from "
-                     "{}".format(logging_config))
+        logging.info(f"Loaded logging configuration from {logging_config}")
     else:
         logging.basicConfig(level=logging.DEBUG)
-        logging.warning("Logging configuration file ({}) not found, using "
-                        "basic logging".format(logging_config))
+        logging.warning(
+            f"Logging configuration file ({logging_config}) not found, using basic logging"
+        )
 
 
 def get_mode():
     """ get the runtime mode """
 
     # set the mode based on where this is running from
-    if os.path.dirname(__file__).startswith("/usr"):
-        return 'prod'
-    else:
-        return 'dev'
+    return 'prod' if os.path.dirname(__file__).startswith("/usr") else 'dev'
 
 
 def setup_ssh():
@@ -89,11 +86,11 @@ def setup_ssh():
     ssh_states = [os.path.exists(_f) for _f in ssh_files]
 
     if all(ssh_states):
-        logging.info("SSH keys present in {}".format(env_dir))
+        logging.info(f"SSH keys present in {env_dir}")
         return
 
-    elif all([not state for state in ssh_states]):
-        logging.debug("No SSH keys present in {}".format(env_dir))
+    elif not any(ssh_states):
+        logging.debug(f"No SSH keys present in {env_dir}")
         logging.info("Creating SSH keys")
         # no keys are setup, so create them
         try:
@@ -131,15 +128,13 @@ def setup_localhost_ssh():
             auth_data = auth_file.read().splitlines()
         if app_pub_key not in auth_data:
             with open(authorized_keys, "a") as auth_file:
-                auth_file.write("{}\n".format(app_pub_key))
-        else:
-            pass
+                auth_file.write(f"{app_pub_key}\n")
 
 
 def setup_common_environment():
 
     setup_logging()
-    logging.info("Run mode is: {}".format(configuration.settings.mode))
+    logging.info(f"Run mode is: {configuration.settings.mode}")
 
     setup_ssh()
 

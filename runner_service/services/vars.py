@@ -53,21 +53,20 @@ def add_hostvars(host_name, group_name, vars, store_type='file'):
                 os.makedirs(hostvars_dir)
             except OSError as e:
                 # directory exists - race condition hit, ignore it
-                logger.debug("Hit race condition for hostvars dir create: {}".format(e)) # noqa
+                logger.debug(f"Hit race condition for hostvars dir create: {e}")
                 if e.errno != 17:
                     raise
 
         hostvars_file = os.path.join(hostvars_dir, host_name)
         if writeYAML(vars, hostvars_file):
-            r.status, r.msg = "OK", \
-                              "Variables written successfully to " \
-                              "{}".format(hostvars_file)
-            return r
+            r.status, r.msg = "OK", f"Variables written successfully to {hostvars_file}"
         else:
-            r.status, r.msg = "FAILED", \
-                              "Unable to write variables to the " \
-                              "filesystem @ {}".format(hostvars_file)
-            return r
+            r.status, r.msg = (
+                "FAILED",
+                f"Unable to write variables to the filesystem @ {hostvars_file}",
+            )
+
+        return r
     else:
         # Store the variables directly in the inventory
         inventory = AnsibleInventory(excl=True)
@@ -86,20 +85,16 @@ def add_hostvars(host_name, group_name, vars, store_type='file'):
             inventory.host_vars_add(group_name, host_name, vars)
 
         except InventoryHostMissing as e:
-            r.status, r.msg = "NOTFOUND", \
-                              "Requested host not found ({})".format(e)
+            r.status, r.msg = "NOTFOUND", f"Requested host not found ({e})"
             return r
         except InventoryGroupMissing as e:
-            r.status, r.msg = "NOTFOUND", \
-                              "Requested group not found ({})".format(e)
+            r.status, r.msg = "NOTFOUND", f"Requested group not found ({e})"
             return r
         except InventoryRequestInvalid as e:
-            r.status, r.msg = "INVALID", \
-                              "Vars must be a JSON object ({})".format(e)
+            r.status, r.msg = "INVALID", f"Vars must be a JSON object ({e})"
             return r
 
-    r.status, r.msg = "OK", \
-                      "Vars added to {}".format(host_name)
+    r.status, r.msg = "OK", f"Vars added to {host_name}"
     return r
 
 
@@ -112,14 +107,11 @@ def remove_hostvars(host_name, group_name):
                                  "host_vars",
                                  host_name)
 
-    logger.debug("Deleting HOSTVARs for {} from filesystem".format(host_name))
+    logger.debug(f"Deleting HOSTVARs for {host_name} from filesystem")
     try:
         os.remove(hostvars_path)
     except OSError as e:
-        if e.errno == 2:
-            # file doesn't exist, ignore the error
-            pass
-        else:
+        if e.errno != 2:
             raise
 
     # now remove from the inventory
@@ -130,36 +122,36 @@ def remove_hostvars(host_name, group_name):
         return r
 
     if host_name not in inventory.group_show(group_name):
-        r.status, r.msg = "NOTFOUND", \
-                          "Host '{}' not in group '{}'".format(host_name,
-                                                               group_name)
+        r.status, r.msg = "NOTFOUND", f"Host '{host_name}' not in group '{group_name}'"
         return r
 
     try:
         inventory.host_vars_remove(group_name, host_name)
 
     except InventoryHostMissing as e:
-        r.status, r.msg = "NOTFOUND", \
-                          "Host '{}' not in group '{}'".format(host_name,
-                                                               group_name)
+        r.status, r.msg = "NOTFOUND", f"Host '{host_name}' not in group '{group_name}'"
         return r
     except InventoryGroupMissing as e:
-        r.status, r.msg = "NOTFOUND", \
-                          "Group '{}' does not exist".format(group_name)
+        r.status, r.msg = "NOTFOUND", f"Group '{group_name}' does not exist"
         return r
 
-    r.status, r.msg = "OK", \
-                      "Vars removed for '{}' in group '{}'".format(host_name,
-                                                                   group_name)
+    r.status, r.msg = (
+        "OK",
+        f"Vars removed for '{host_name}' in group '{group_name}'",
+    )
+
     return r
 
 
 def get_groupvars(group_name):
     r = APIResponse()
-    groupvars_path = os.path.join(configuration.settings.playbooks_root_dir,
-                                  "project",
-                                  "group_vars",
-                                  "{}.yml".format(group_name))
+    groupvars_path = os.path.join(
+        configuration.settings.playbooks_root_dir,
+        "project",
+        "group_vars",
+        f"{group_name}.yml",
+    )
+
 
     if os.path.exists(groupvars_path):
         logger.debug("GROUPVARs GET request serviced from filesystem")
@@ -192,23 +184,21 @@ def add_groupvars(group_name, vars, store_type='file'):
                 os.makedirs(groupvars_dir)
             except OSError as e:
                 # directory exists - race condition hit, ignore it
-                logger.debug("Hit race condition for groupvars dir create: {}".format(e)) # noqa
+                logger.debug(f"Hit race condition for groupvars dir create: {e}")
                 if e.errno != 17:
                     raise
 
-        groupvars_path = os.path.join(groupvars_dir,
-                                      "{}.yml".format(group_name))
+        groupvars_path = os.path.join(groupvars_dir, f"{group_name}.yml")
 
         if writeYAML(vars, groupvars_path):
-            r.status, r.msg = "OK", \
-                              "Variables written successfully to " \
-                              "{}".format(groupvars_path)
-            return r
+            r.status, r.msg = "OK", f"Variables written successfully to {groupvars_path}"
         else:
-            r.status, r.msg = "FAILED", \
-                              "Unable to write variables to the " \
-                              "filesystem @ {}".format(groupvars_path)
-            return r
+            r.status, r.msg = (
+                "FAILED",
+                f"Unable to write variables to the filesystem @ {groupvars_path}",
+            )
+
+        return r
     else:
         # inventory group vars is requested
         # Store the variables directly in the inventory
@@ -227,31 +217,29 @@ def add_groupvars(group_name, vars, store_type='file'):
             inventory.group_vars_add(group_name, vars)
 
         except InventoryRequestInvalid as e:
-            r.status, r.msg = "INVALID", \
-                              "Vars must be a JSON object ({})".format(e)
+            r.status, r.msg = "INVALID", f"Vars must be a JSON object ({e})"
             return r
         else:
-            r.status, r.msg = "OK", \
-                "Vars added to {}".format(group_name)
+            r.status, r.msg = "OK", f"Vars added to {group_name}"
             return r
 
 
 def remove_groupvars(group_name):
     r = APIResponse()
 
-    groupvars_path = os.path.join(configuration.settings.playbooks_root_dir,
-                                  "project",
-                                  "group_vars",
-                                  "{}.yml".format(group_name))
+    groupvars_path = os.path.join(
+        configuration.settings.playbooks_root_dir,
+        "project",
+        "group_vars",
+        f"{group_name}.yml",
+    )
 
-    logger.debug("Deleting GROUPVARs for {} from filesystem".format(group_name))    # noqa
+
+    logger.debug(f"Deleting GROUPVARs for {group_name} from filesystem")
     try:
         os.remove(groupvars_path)
     except OSError as e:
-        if e.errno == 2:
-            # file doesn't exist, ignore the error
-            pass
-        else:
+        if e.errno != 2:
             raise
 
     # now remove from the inventory
@@ -265,10 +253,8 @@ def remove_groupvars(group_name):
         inventory.group_vars_remove(group_name)
 
     except InventoryGroupMissing as e:
-        r.status, r.msg = "NOTFOUND", \
-                          "Group '{}' does not exist".format(group_name)
+        r.status, r.msg = "NOTFOUND", f"Group '{group_name}' does not exist"
         return r
     else:
-        r.status, r.msg = "OK", \
-                          "group vars removed for '{}'".format(group_name)
+        r.status, r.msg = "OK", f"group vars removed for '{group_name}'"
         return r

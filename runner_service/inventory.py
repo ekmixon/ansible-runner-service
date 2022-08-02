@@ -107,12 +107,15 @@ class AnsibleInventory(object):
 
     def __init__(self, inventory_file=None, excl=False):
 
-        if not inventory_file:
-            self.filename = os.path.join(configuration.settings.playbooks_root_dir,     # noqa
-                                         "inventory",
-                                         "hosts")
-        else:
-            self.filename = os.path.expanduser(inventory_file)
+        self.filename = (
+            os.path.expanduser(inventory_file)
+            if inventory_file
+            else os.path.join(
+                configuration.settings.playbooks_root_dir,  # noqa
+                "inventory",
+                "hosts",
+            )
+        )
 
         self.inventory = None
         self.exclusive_lock = excl
@@ -135,15 +138,14 @@ class AnsibleInventory(object):
                 self.fd = open(self.filename, 'w')
                 fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except IOError as _e:
-                logger.warning("Race condition hit creating Inventory "
-                               "file: {}".format(_e))
+                logger.warning(f"Race condition hit creating Inventory file: {_e}")
             else:
                 try:
                     self.fd.write(yaml.safe_dump(AnsibleInventory.inventory_seed,   # noqa
                                                  default_flow_style=False))
                     fcntl.flock(self.fd, fcntl.LOCK_UN)
                 except IOError as _e:
-                    raise InventoryWriteError("Seeding inventory failed: {}".format(_e))    # noqa
+                    raise InventoryWriteError(f"Seeding inventory failed: {_e}")
             finally:
                 self.fd.close()
 
@@ -157,10 +159,10 @@ class AnsibleInventory(object):
                         self.lock()
                     except IOError as _e:
                         # Can't obtain an exclusive_lock
-                        logger.warning("Unable to lock inventory (attempt "
-                                       "{}/{}): {}".format(_d + 1,
-                                                           num_retries,
-                                                           _e))
+                        logger.warning(
+                            f"Unable to lock inventory (attempt {_d + 1}/{num_retries}): {_e}"
+                        )
+
                         time.sleep(.05)     # wait 50ms before retry
                     else:
                         locked = True
@@ -173,8 +175,10 @@ class AnsibleInventory(object):
             else:
                 raw = fread(self.filename)
         except Exception as ex:
-            raise InventoryreadError("Unable to read the inventory file at "
-                                     "{}, error: {}".format(self.filename, ex))
+            raise InventoryreadError(
+                f"Unable to read the inventory file at {self.filename}, error: {ex}"
+            )
+
 
         if not raw:
             # If the inventory is empty for some extrange reason
@@ -184,10 +188,9 @@ class AnsibleInventory(object):
             try:
                 self.inventory = yaml.safe_load(raw)
             except yaml.YAMLError as ex:
-                raise \
-                    InventoryCorruptError("Unable to understand the inventory"
-                                          " yaml file at {}, error: "
-                                          "{}".format(self.filename, ex))
+                raise InventoryCorruptError(
+                    f"Unable to understand the inventory yaml file at {self.filename}, error: {ex}"
+                )
 
     def _dump(self):
         return yaml.safe_dump(self.inventory, default_flow_style=False)
@@ -240,15 +243,15 @@ class AnsibleInventory(object):
     def group_add(self, group):
         node = self.inventory['all']['children']
         if not isinstance(node, dict):
-            self.inventory['all']['children'] = dict()
+            self.inventory['all']['children'] = {}
         self.inventory['all']['children'][group] = {"hosts": None}
-        logger.info("Group '{}' added to the inventory".format(group))
+        logger.info(f"Group '{group}' added to the inventory")
         self.save()
 
     @group_exists
     def group_remove(self, group):
         del self.inventory['all']['children'][group]
-        logger.info("Group '{}' removed from the inventory".format(group))
+        logger.info(f"Group '{group}' removed from the inventory")
         if not self.inventory['all']['children']:
             self.inventory['all']['children'] = None
         self.save()
@@ -274,8 +277,7 @@ class AnsibleInventory(object):
                 'ansible_host': host,
                 'ansible_port': port,
             }
-        logger.info("Host '{}' added to the inventory group "
-                    "'{}'".format(host, group))
+        logger.info(f"Host '{host}' added to the inventory group '{group}'")
         self.save()
 
     @group_exists
@@ -283,27 +285,18 @@ class AnsibleInventory(object):
         node = self.inventory['all']['children'][group]['hosts']
         if isinstance(node, dict):
             if host not in self.inventory['all']['children'][group]['hosts']:
-                raise InventoryHostMissing("Host {} not in {}".format(host,
-                                                                      group))
-            else:
-                del self.inventory['all']['children'][group]['hosts'][host]
-                logger.info("Host '{}' removed from inventory group "
-                            "'{}'".format(host, group))
-                if not self.inventory['all']['children'][group]['hosts']:
-                    self.inventory['all']['children'][group]['hosts'] = None
-                self.save()
+                raise InventoryHostMissing(f"Host {host} not in {group}")
+            del self.inventory['all']['children'][group]['hosts'][host]
+            logger.info(f"Host '{host}' removed from inventory group '{group}'")
+            if not self.inventory['all']['children'][group]['hosts']:
+                self.inventory['all']['children'][group]['hosts'] = None
+            self.save()
         else:
-            logger.debug("Host removal attempted against the empty "
-                         "group '{}'".format(group))
+            logger.debug(f"Host removal attempted against the empty group '{group}'")
             raise InventoryGroupEmpty("Group is empty")
 
     def host_show(self, host):
-        host_groups = list()
-        for group in self.groups:
-            if host in self.group_show(group):
-                host_groups.append(group)
-
-        return host_groups
+        return [group for group in self.groups if host in self.group_show(group)]
 
     @group_exists
     @host_exists
@@ -326,10 +319,7 @@ class AnsibleInventory(object):
     @group_exists
     @host_exists
     def host_vars_show(self, group, host):
-        if self.inventory['all']['children'][group]['hosts'][host]:
-            return self.inventory['all']['children'][group]['hosts'][host]
-        else:
-            return {}
+        return self.inventory['all']['children'][group]['hosts'][host] or {}
 
     @group_exists
     def group_vars_show(self, group):

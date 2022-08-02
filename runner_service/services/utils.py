@@ -40,4 +40,4 @@ class APIResponse(object):
     def __init__(self):
         self.status = ''
         self.msg = ''
-        self.data = dict()
+        self.data = {}

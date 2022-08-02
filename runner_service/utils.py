@@ -41,20 +41,19 @@ def create_self_signed_cert(cert_dir, cert_pfx):
     returns if they exist, or create them if they're missing.
     """
 
-    cert_filename = os.path.join(cert_dir,
-                                 "{}.crt".format(cert_pfx))
-    key_filename = os.path.join(cert_dir,
-                                "{}.key".format(cert_pfx))
+    cert_filename = os.path.join(cert_dir, f"{cert_pfx}.crt")
+    key_filename = os.path.join(cert_dir, f"{cert_pfx}.key")
 
-    logger.debug("Checking for the SSL keys in {}".format(cert_dir))
+    logger.debug(f"Checking for the SSL keys in {cert_dir}")
     if os.path.exists(cert_filename) \
             or os.path.exists(key_filename):
-        logger.info("Using existing SSL files in {}".format(cert_dir))
-        return (cert_filename, key_filename)
+        logger.info(f"Using existing SSL files in {cert_dir}")
     else:
-        logger.info("Existing SSL files not found in {}".format(cert_dir))
-        logger.info("Self-signed cert will be created - expiring in {} "
-                    "years".format(configuration.settings.cert_expiration))
+        logger.info(f"Existing SSL files not found in {cert_dir}")
+        logger.info(
+            f"Self-signed cert will be created - expiring in {configuration.settings.cert_expiration} years"
+        )
+
 
         # create a key pair
         k = crypto.PKey()
@@ -81,15 +80,16 @@ def create_self_signed_cert(cert_dir, cert_pfx):
         # create cert_dir if it doesn't exist
         create_directory(cert_dir)
 
-        logger.debug("Writing crt file to {}".format(cert_filename))
+        logger.debug(f"Writing crt file to {cert_filename}")
         with open(os.path.join(cert_dir, cert_filename), "wt") as cert_fd:
             cert_fd.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))   # noqa
 
-        logger.debug("Writing key file to {}".format(key_filename))
+        logger.debug(f"Writing key file to {key_filename}")
         with open(os.path.join(cert_dir, key_filename), "wt") as key_fd:
             key_fd.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode('utf-8'))    # noqa
 
-        return (cert_filename, key_filename)
+
+    return (cert_filename, key_filename)
 
 
 def rm_r(path):
@@ -127,16 +127,16 @@ def ssh_create_key(ssh_dir, user=None):
                     encryption_algorithm=serialization.NoEncryption()))
 
     except (OSError, IOError) as err:
-        msg = "Unable to write to private key to '{}': {}".format(ssh_dir, err)
+        msg = f"Unable to write to private key to '{ssh_dir}': {err}"
         logger.critical(msg)
         raise RunnerServiceError(msg)
     except Exception as err:
-        logger.critical("Unknown error writing private key: {}".format(err))
+        logger.critical(f"Unknown error writing private key: {err}")
         raise
     else:
         # python3 syntax
         os.chmod(prv_file, 0o600)
-        logger.info("Created SSH private key @ '{}'".format(prv_file))
+        logger.info(f"Created SSH private key @ '{prv_file}'")
 
     # export the public key
     try:
@@ -146,17 +146,16 @@ def ssh_create_key(ssh_dir, user=None):
                     format=serialization.PublicFormat.OpenSSH))
 
     except (OSError, IOError) as err:
-        msg = "Unable to write public ssh key to {}: {}".format(ssh_dir, err)
+        msg = f"Unable to write public ssh key to {ssh_dir}: {err}"
         logger.critical(msg)
         raise RunnerServiceError(msg)
     except Exception as err:
-        logger.critical("Unknown error creating the public key "
-                        "to {}: {}".format(ssh_dir, err))
+        logger.critical(f"Unknown error creating the public key to {ssh_dir}: {err}")
         raise
     else:
         # python3 syntax
         os.chmod(pub_file, 0o644)
-        logger.info("Created SSH public key @ '{}'".format(pub_file))
+        logger.info(f"Created SSH public key @ '{pub_file}'")
 
 
 if sys.version_info[0] == 2:
@@ -245,11 +244,7 @@ class SSHClient(object):
 def ssh_connect_ok(host, user=None, port=None):
 
     if not user:
-        if configuration.settings.target_user:
-            user = configuration.settings.target_user
-        else:
-            user = getpass.getuser()
-
+        user = configuration.settings.target_user or getpass.getuser()
     priv_key = os.path.join(configuration.settings.ssh_private_key)
 
     if not os.path.exists(priv_key):
@@ -266,16 +261,20 @@ def ssh_connect_ok(host, user=None, port=None):
     try:
         target.connect()
     except HostNotFound:
-        return False, "NOCONN:SSH error - '{}' not found; check DNS or " \
-                "/etc/hosts".format(host)
+        return False, f"NOCONN:SSH error - '{host}' not found; check DNS or /etc/hosts"
     except SSHNotAccessible:
-        return False, "NOCONN:SSH target '{}' not contactable; host offline" \
-                      ", port 22 blocked, sshd running?".format(host)
+        return (
+            False,
+            f"NOCONN:SSH target '{host}' not contactable; host offline, port 22 blocked, sshd running?",
+        )
+
     except SSHTimeout:
-        return False, "TIMEOUT:SSH timeout waiting for response from " \
-                      "'{}'".format(host)
+        return False, f"TIMEOUT:SSH timeout waiting for response from '{host}'"
     except SSHAuthFailure:
-        return False, "NOAUTH:SSH auth error - passwordless ssh not " \
-            "configured for '{}'".format(host)
+        return (
+            False,
+            f"NOAUTH:SSH auth error - passwordless ssh not configured for '{host}'",
+        )
+
     else:
-        return True, "OK:SSH connection check to {} successful".format(host)
+        return True, f"OK:SSH connection check to {host} successful"

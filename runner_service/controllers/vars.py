@@ -116,9 +116,11 @@ class HostVars(BaseResource):
         if request.content_type != 'application/json':
             logger.warning("Invalid request. HOSTVARS POST requests must be "
                            "in JSON format (application/json)")
-            r.status, r.msg = "UNSUPPORTED", \
-                              "Invalid content-type({}). Use application/" \
-                              "json".format(request.content_type)
+            r.status, r.msg = (
+                "UNSUPPORTED",
+                f"Invalid content-type({request.content_type}). Use application/json",
+            )
+
 
             return r.__dict__, self.state_to_http[r.status]
 
@@ -126,13 +128,12 @@ class HostVars(BaseResource):
         store_type = 'file'
 
         vars = request.get_json()
-        args = request.args.to_dict()
-        if args:
+        if args := request.args.to_dict():
             r_store_type = args.get('type', None)
             if not r_store_type:
                 logger.debug("POST request invalid. Only type= is supported")
                 r.status, r.msg = "INVALID", \
-                                  "Only type=inventory is supported"
+                                      "Only type=inventory is supported"
                 return r.__dict__, self.state_to_http[r.status]
 
             if r_store_type in ['inventory', 'file']:
@@ -140,16 +141,16 @@ class HostVars(BaseResource):
             else:
                 logger.debug("HOSTVARS POST request has invalid type parm")
                 r.status, r.msg = "INVALID", \
-                                  "type= value must be either inventory or file" # noqa
+                                      "type= value must be either inventory or file" # noqa
                 return r.__dict__, self.state_to_http[r.status]
 
         # check that the json object can be converted to YAML
         try:
             yaml.safe_dump(vars)
         except yaml.YAMLError as e:
-            logger.error("Unable to convert vars to YAML format : {}".format(e)) # noqa
+            logger.error(f"Unable to convert vars to YAML format : {e}")
             r.status, r.msg = "INVALID", \
-                              "JSON received could not be converted to YAML"
+                                  "JSON received could not be converted to YAML"
             return r.__dict__, self.state_to_http[r.status]
 
         # payload is OK, so let's commit the change
@@ -253,9 +254,11 @@ class GroupVars(BaseResource):
         if request.content_type != 'application/json':
             logger.warning("Invalid request. GROUPVARS POST requests must be "
                            "in JSON format (application/json)")
-            r.status, r.msg = "UNSUPPORTED", \
-                              "Invalid content-type({}). Use application/" \
-                              "json".format(request.content_type)
+            r.status, r.msg = (
+                "UNSUPPORTED",
+                f"Invalid content-type({request.content_type}). Use application/json",
+            )
+
 
             return r.__dict__, self.state_to_http[r.status]
 
@@ -263,13 +266,12 @@ class GroupVars(BaseResource):
         store_type = 'file'
 
         vars = request.get_json()
-        args = request.args.to_dict()
-        if args:
+        if args := request.args.to_dict():
             r_store_type = args.get('type', None)
             if not r_store_type:
                 logger.debug("POST request invalid. Only type= is supported")
                 r.status, r.msg = "INVALID", \
-                                  "Only type=inventory is supported"
+                                      "Only type=inventory is supported"
                 return r.__dict__, self.state_to_http[r.status]
 
             if r_store_type in ['inventory', 'file']:
@@ -277,16 +279,16 @@ class GroupVars(BaseResource):
             else:
                 logger.debug("GROUPVARS POST request has invalid type parm")
                 r.status, r.msg = "INVALID", \
-                                  "type= value must be either inventory or file" # noqa
+                                      "type= value must be either inventory or file" # noqa
                 return r.__dict__, self.state_to_http[r.status]
 
         # check that the json object can be converted to YAML
         try:
             yaml.safe_dump(vars)
         except yaml.YAMLError as e:
-            logger.error("Unable to convert vars to YAML format : {}".format(e)) # noqa
+            logger.error(f"Unable to convert vars to YAML format : {e}")
             r.status, r.msg = "INVALID", \
-                              "JSON received could not be converted to YAML"
+                                  "JSON received could not be converted to YAML"
             return r.__dict__, self.state_to_http[r.status]
 
         # payload is OK, so let's commit the change

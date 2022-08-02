@@ -24,7 +24,7 @@ class API(Resource):
                                if m not in ["HEAD", "OPTIONS"]]
                 doc_string = app.view_functions[rule.endpoint].__doc__
 
-                details = dict()
+                details = {}
 
                 tgt = app.view_functions[rule.endpoint].view_class
                 for method in method_list:

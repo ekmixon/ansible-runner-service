@@ -43,9 +43,12 @@ class TestPlaybooks(APITestCase):
 
     def test_run_missing_playbook_(self):
         """- run a dummy playbook - should error 404"""
-        response = self.app.post('api/v1/playbooks/imnotallthere.yml',
-                                 data=json.dumps(dict()),
-                                 content_type='application/json')
+        response = self.app.post(
+            'api/v1/playbooks/imnotallthere.yml',
+            data=json.dumps({}),
+            content_type='application/json',
+        )
+
         self.assertEqual(response.status_code,
                          404)
 
@@ -69,9 +72,12 @@ class TestPlaybooks(APITestCase):
         self.assertEqual(response.status_code,
                          200)
 
-        response = self.app.post('api/v1/playbooks/testplaybook.yml',
-                                 data=json.dumps(dict()),
-                                 content_type="application/json")
+        response = self.app.post(
+            'api/v1/playbooks/testplaybook.yml',
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
         self.assertEqual(response.status_code,
                          202)     # it started OK
 
@@ -79,7 +85,7 @@ class TestPlaybooks(APITestCase):
 
         # wait for playbook completion
         while True:
-            response = self.app.get('api/v1/playbooks/{}'.format(play_uuid))
+            response = self.app.get(f'api/v1/playbooks/{play_uuid}')
 
             self.assertIn(response.status_code, [200, 404])
 
@@ -91,9 +97,12 @@ class TestPlaybooks(APITestCase):
         """- run a playbook using tags"""
         self.assertTrue(True)
 
-        response = self.app.post('api/v1/playbooks/testplaybook.yml/tags/solo',
-                                 data=json.dumps(dict()),
-                                 content_type="application/json")
+        response = self.app.post(
+            'api/v1/playbooks/testplaybook.yml/tags/solo',
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
         self.assertEqual(response.status_code,
                          202)     # it started OK
 
@@ -101,7 +110,7 @@ class TestPlaybooks(APITestCase):
 
         # wait for playbook completion
         while True:
-            response = self.app.get('api/v1/playbooks/{}'.format(play_uuid))
+            response = self.app.get(f'api/v1/playbooks/{play_uuid}')
 
             self.assertIn(response.status_code, [200, 404])
             if json.loads(response.data)['msg'] in ['successful', 'failed']:
@@ -111,9 +120,12 @@ class TestPlaybooks(APITestCase):
     def test_run_playbook_limited(self):
         """- run a playbook that uses limit"""
 
-        response = self.app.post('api/v1/playbooks/testplaybook.yml?limit=localhost',   # noqa
-                                 data=json.dumps(dict()),
-                                 content_type="application/json")
+        response = self.app.post(
+            'api/v1/playbooks/testplaybook.yml?limit=localhost',
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
         self.assertEqual(response.status_code,
                          202)     # it started OK
 
@@ -121,7 +133,7 @@ class TestPlaybooks(APITestCase):
         # wait for playbook completion
 
         while True:
-            response = self.app.get('api/v1/playbooks/{}'.format(play_uuid))
+            response = self.app.get(f'api/v1/playbooks/{play_uuid}')
 
             self.assertIn(response.status_code, [200, 404])
             if json.loads(response.data)['msg'] in ['successful', 'failed']:
@@ -132,14 +144,17 @@ class TestPlaybooks(APITestCase):
     def test_cancel_running_playbook(self):
         """- Issue a cancel against a running playbook"""
 
-        response = self.app.post('api/v1/playbooks/testplaybook.yml',
-                                 data=json.dumps(dict()),
-                                 content_type="application/json")
+        response = self.app.post(
+            'api/v1/playbooks/testplaybook.yml',
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
         self.assertEqual(response.status_code,
                          202)     # it started OK
 
         play_uuid = json.loads(response.data)['data']['play_uuid']
-        response = self.app.delete('api/v1/playbooks/{}'.format(play_uuid))
+        response = self.app.delete(f'api/v1/playbooks/{play_uuid}')
         self.assertEqual(response.status_code,
                          200)
 

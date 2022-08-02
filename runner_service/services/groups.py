@@ -14,9 +14,11 @@ def add_group(group_name):
 
     reserved_group_names = ['all']
     if group_name in reserved_group_names:
-        r.status, r.msg = "INVALID", \
-                          "Group name '{}' is a reserved/system group " \
-                          "name".format(group_name)
+        r.status, r.msg = (
+            "INVALID",
+            f"Group name '{group_name}' is a reserved/system group name",
+        )
+
         return r
 
     inventory = AnsibleInventory(excl=True)
@@ -26,12 +28,12 @@ def add_group(group_name):
         except InventoryGroupExists:
             r.status, r.msg = 'OK', 'Group already exists'
         else:
-            r.status, r.msg = 'OK', 'Group {} added'.format(group_name)
+            r.status, r.msg = 'OK', f'Group {group_name} added'
 
-        return r
     else:
         r.status, r.msg = 'LOCKED', 'Unable to lock the inventory file'
-        return r
+
+    return r
 
 
 def remove_group(group_name):
@@ -43,12 +45,12 @@ def remove_group(group_name):
         except InventoryGroupMissing:
             r.status, r.msg = 'INVALID', "Group doesn't exist"
         else:
-            r.status, r.msg = 'OK', 'Group {} removed'.format(group_name)
+            r.status, r.msg = 'OK', f'Group {group_name} removed'
 
-        return r
     else:
         r.status, r.msg = 'LOCKED', 'Unable to lock the inventory file'
-        return r
+
+    return r
 
 
 def get_groups():

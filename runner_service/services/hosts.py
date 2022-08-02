@@ -26,8 +26,7 @@ def add_host(host_name, group_name, ssh_port=None):
     group_members = inventory.group_show(group_name)
     if host_name in group_members:
         # host already in that group!
-        r.status, r.msg = "OK", \
-                          "Host already in the group {}".format(group_name)
+        r.status, r.msg = "OK", f"Host already in the group {group_name}"
         inventory.unlock()
         return r
 
@@ -39,9 +38,9 @@ def add_host(host_name, group_name, ssh_port=None):
     if configuration.settings.ssh_checks:
         ssh_ok, msg = ssh_connect_ok(host_name, port=ssh_port)
         if ssh_ok:
-            logger.info("SSH - {}".format(msg))
+            logger.info(f"SSH - {msg}")
         else:
-            logger.error("SSH - {}".format(msg))
+            logger.error(f"SSH - {msg}")
             error_info = msg.split(':', 1)
             if error_info[0] == "NOAUTH":
                 pub_key_file = os.path.join(configuration.settings.playbooks_root_dir,  # noqa
@@ -53,12 +52,12 @@ def add_host(host_name, group_name, ssh_port=None):
             inventory.unlock()
             return r
     else:
-        logger.warning("Skipped SSH connection test for {}".format(host_name))
+        logger.warning(f"Skipped SSH connection test for {host_name}")
         r.msg = 'skipped SSH checks due to ssh_checks disabled by config'
 
     inventory.host_add(group_name, host_name, ssh_port)
     r.status = "OK"
-    r.msg = "{} added".format(host_name)
+    r.msg = f"{host_name} added"
 
     return r
 

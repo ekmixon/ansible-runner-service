@@ -97,19 +97,16 @@ class Config(object):
                     global logger
                     logger = logging.getLogger()
             except yaml.YAMLError as exc:
-                logger.error("ERROR: YAML error in logging configuration "
-                             "file: {}".format(exc))
+                logger.error(f"ERROR: YAML error in logging configuration file: {exc}")
 
         # apply overrides from configuration settings in /etc/?
-        logger.info("Analysing local configuration options from "
-                    "{}".format(self.config_file))
+        logger.info(f"Analysing local configuration options from {self.config_file}")
 
         try:
             with open(self.config_file, "r") as _cfg:
                 local_config = yaml.load(_cfg.read())
         except yaml.YAMLError as exc:
-            logger.critical("ERROR: YAML error in configuration "
-                            "file: {}".format(exc))
+            logger.critical(f"ERROR: YAML error in configuration file: {exc}")
             sys.exit(12)
 
         overridden_options = False
@@ -117,8 +114,7 @@ class Config(object):
         for varname in local_config.keys():
             if varname in self.__dict__.keys():
                 _value = local_config.get(varname)
-                logger.info("- setting {} to {}".format(varname,
-                                                        _value))
+                logger.info(f"- setting {varname} to {_value}")
                 setattr(self, varname, _value)
                 overridden_options = True
 
@@ -134,7 +130,7 @@ class Config(object):
         for varname in os.environ.keys():
             if varname in self.__dict__.keys():
                 _value = self._convert_value(os.environ[varname])
-                logger.info("- setting {} to {}".format(varname, _value))
+                logger.info(f"- setting {varname} to {_value}")
                 setattr(self, varname, _value)
                 overridden_options = True
 

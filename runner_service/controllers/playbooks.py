@@ -118,8 +118,7 @@ class PlaybookState(BaseResource):
         r = APIResponse()
         if play_uuid not in runner_cache.keys():
             # play_uuid may be valie but it's not actually running
-            r.status, r.msg = "NOT ACTIVE", \
-                              "playbook with uuid {} is not active".format(play_uuid)
+            r.status, r.msg = "NOT ACTIVE", f"playbook with uuid {play_uuid} is not active"
             return r.__dict__, 404
 
         stop_playbook(play_uuid)
@@ -141,20 +140,25 @@ def _run_playbook(playbook_name, tags=None):
     if not request.content_type.startswith('application/json'):
         logger.warning("Invalid request type. Playbook POST requests must be "
                        "in application/json format")
-        r.status, r.msg = "UNSUPPORTED", \
-                          "Invalid content-type({}). Use application/" \
-                          "json".format(request.content_type)
+        r.status, r.msg = (
+            "UNSUPPORTED",
+            f"Invalid content-type({request.content_type}). Use application/json",
+        )
+
         return r
     try:
         vars = request.get_json()
     except Exception as e:
-        r.status, r.msg = "INVALID", "Failed to decode JSON object: {}".format(e)
+        r.status, r.msg = "INVALID", f"Failed to decode JSON object: {e}"
         logger.error(r)
         return r
     filter = request.args.to_dict()
-    if not all([_k in valid_filter for _k in filter.keys()]):
-        r.status, r.msg = "INVALID", "Bad request, supported " \
-                          "filters are: {}".format(','.join(valid_filter))
+    if any(_k not in valid_filter for _k in filter.keys()):
+        r.status, r.msg = (
+            "INVALID",
+            f"Bad request, supported filters are: {','.join(valid_filter)}",
+        )
+
         return r
 
     if 'limit' in filter:
@@ -162,7 +166,7 @@ def _run_playbook(playbook_name, tags=None):
         target_hosts = filter['limit'].split(',')
         inv_hosts = AnsibleInventory().hosts
         logger.debug("Checking host limit against the inventory")
-        if all([_h in inv_hosts for _h in target_hosts]):
+        if all(_h in inv_hosts for _h in target_hosts):
             logger.debug("hosts in the limit list match the inventory")
 
         else:
@@ -172,10 +176,10 @@ def _run_playbook(playbook_name, tags=None):
                               "Host(s) provided not in Ansible inventory"
             return r
 
-    logger.info("Playbook run request for {}, from {}, "
-                "parameters: {}".format(playbook_name,
-                                        request.remote_addr,
-                                        vars))
+    logger.info(
+        f"Playbook run request for {playbook_name}, from {request.remote_addr}, parameters: {vars}"
+    )
+
 
     # does the playbook exist?
     if not playbook_exists(playbook_name):
@@ -186,10 +190,7 @@ def _run_playbook(playbook_name, tags=None):
 
     play_uuid = response.data.get('play_uuid', None)
     status = response.data.get('status', None)
-    msg = ("Playbook {}, UUID={} initiated :"
-           " status={}".format(playbook_name,
-                               play_uuid,
-                               status))
+    msg = f"Playbook {playbook_name}, UUID={play_uuid} initiated : status={status}"
 
     if status in ['started', 'starting', 'running', 'successful']:
         logger.info(msg)
@@ -198,10 +199,10 @@ def _run_playbook(playbook_name, tags=None):
 
     if play_uuid:
         r.status, r.msg, r.data = "STARTED", status, {"play_uuid": play_uuid}
-        return r
     else:
         r.status, r.msg = "FAILED", "Runner thread failed to start"
-        return r
+
+    return r
 
 
 class StartPlaybook(BaseResource):

@@ -122,10 +122,8 @@ class HostDetails(BaseResource):
                 return response.__dict__, self.state_to_http[response.status]
 
         # removal from all groups was successful
-        response.msg = "{} removed from {} group(s) " \
-                       "({})".format(host_name,
-                                     len(group_list),
-                                     ','.join(group_list))
+        response.msg = f"{host_name} removed from {len(group_list)} group(s) ({','.join(group_list)})"
+
         response.data = {}
 
         return response.__dict__, self.state_to_http[response.status]
@@ -141,7 +139,10 @@ class HostMgmt(BaseResource):
         try:
             return int(value)
         except ValueError:
-            logger.warn("Port {} is not valid integer number, we will use default SSH port.".format(value))
+            logger.warn(
+                f"Port {value} is not valid integer number, we will use default SSH port."
+            )
+
             return None
 
 
@@ -188,13 +189,10 @@ class HostMgmt(BaseResource):
         """ # noqa
 
         valid_parms = ['others', 'port']
-        group_list = []
-        group_list.append(group_name)
+        group_list = [group_name]
         ssh_port = None
 
-        args = request.args.to_dict()
-
-        if args:
+        if args := request.args.to_dict():
             logger.debug("additional args received")
             if all(p in valid_parms for p in args.keys()):
                 if 'others' in args:
@@ -203,12 +201,11 @@ class HostMgmt(BaseResource):
             else:
                 r = APIResponse()
                 r.status = 'INVALID'
-                r.msg = "Supported additional parameters are " \
-                        "{}".format(','.join(valid_parms))
+                r.msg = f"Supported additional parameters are {','.join(valid_parms)}"
                 return r.__dict__, self.state_to_http[r.status]
 
         for group in group_list:
-            logger.debug("Adding host {} to group {}".format(host_name, group))
+            logger.debug(f"Adding host {host_name} to group {group}")
             response = add_host(host_name, group, ssh_port)
             if response.status != 'OK':
                 break

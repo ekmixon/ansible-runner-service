@@ -139,7 +139,7 @@ class TestInventory(APITestCase):
                          200)
 
         # attempt to add duplicates
-        for _ctr in range(0, dupe_count, 1):
+        for _ctr in range(dupe_count):
 
             response = self.app.post('/api/v1/hosts/localhost/groups/dupe')
             self.assertEqual(response.status_code,

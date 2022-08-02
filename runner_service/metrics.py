@@ -48,19 +48,16 @@ class PrometheusStats(object):
         s = ''
         for m_name in sorted(self.metrics.keys()):
             metric = self.metrics[m_name]
-            s += "#HELP: {} - {}\n".format(m_name,
-                                           metric.var_help)
-            s += "#TYPE: {} - {}\n".format(m_name,
-                                           metric.var_type)
+            s += f"#HELP: {m_name} - {metric.var_help}\n"
+            s += f"#TYPE: {m_name} - {metric.var_type}\n"
 
             for v in metric.data:
                 labels = []
                 for n in v['labels'].items():
-                    label_name = '{}='.format(n[0])
-                    label_value = '"{}"'.format(n[1])
+                    label_name = f'{n[0]}='
+                    label_value = f'"{n[1]}"'
 
-                    labels.append('{}{}'.format(label_name,
-                                                label_value))
+                    labels.append(f'{label_name}{label_value}')
 
                 s += "{}{{{}}} {}\n".format(m_name,
                                             ','.join(labels),
@@ -73,7 +70,7 @@ class PrometheusStats(object):
         labels = {"hostname": self.hostname}
         pb_dir = os.path.join(configuration.settings.playbooks_root_dir,
                               "project")
-        playbook_count = len(glob.glob('{}/*.yml'.format(pb_dir)))
+        playbook_count = len(glob.glob(f'{pb_dir}/*.yml'))
         _m.add(labels, playbook_count)
         self.metrics['runner_service_playbook_count'] = _m
 
